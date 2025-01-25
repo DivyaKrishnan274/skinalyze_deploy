@@ -113,7 +113,7 @@ def show_home_page():
     col1, col2 = st.columns([0.7, 0.5])  
 
     with col1:
-        image = Image.open("Cwallpaper.jpg")  
+        image = Image.open("wallpaper.jpg")  
         st.image(image, caption='Regular Skin Care', use_container_width=True)
 
     with col2:
