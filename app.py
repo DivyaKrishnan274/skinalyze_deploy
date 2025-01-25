@@ -45,7 +45,7 @@ def preprocess_image(image, img_size=(128, 128)):
     return img
 
 # Load the skin type model
-skin_type_model = load_model("models/skin_type_model.keras")
+skin_type_model = load_model("skin_type_model.keras")
 
 # Function to predict skin type
 def predict_skin_type(image):
