@@ -4,10 +4,14 @@ import numpy as np
 import cv2
 import streamlit as st
 from PIL import Image
+from sklearn.metrics.pairwise import euclidean_distances
 from tensorflow.keras.models import load_model
 
 # Load the skin type model
 skin_type_model = load_model("skin_type_model.keras")
+
+# Severity levels and their mapped integer values
+severity_mapping = {"Clear": 1, "Mild": 2, "Moderate": 3, "Severe": 4, "Very Severe": 5}
 
 # Preprocess uploaded image for comparison
 def preprocess_image(image, img_size=(128, 128)):
@@ -16,7 +20,37 @@ def preprocess_image(image, img_size=(128, 128)):
     img = img / 255.0  # Normalize to [0, 1]
     return img
 
-# Function to predict skin type
+# Load dataset images and labels for severity prediction
+def load_dataset_images(image_folder, labels_file):
+    images = []
+    labels = []
+    labels_df = pd.read_csv(labels_file)  # Assuming labels file is a CSV with columns 'Image' and 'Severity Level'
+    
+    for index, row in labels_df.iterrows():
+        img_path = os.path.join(image_folder, row['Image'])
+        img = cv2.imread(img_path)
+        img = cv2.resize(img, (128, 128))  # Resize images to a fixed size
+        img = img / 255.0  # Normalize images to [0, 1]
+        images.append(img)
+        labels.append(row['Severity Level'])  # Severity levels are in the 'Severity Level' column
+    
+    return np.array(images), np.array(labels)
+
+# Function to find the most similar image in the dataset for severity prediction
+def find_closest_image(uploaded_image, dataset_images, dataset_labels):
+    uploaded_image_flatten = uploaded_image.flatten().reshape(1, -1)
+    dataset_images_flatten = dataset_images.reshape(dataset_images.shape[0], -1)
+    
+    # Calculate Euclidean distances
+    distances = euclidean_distances(uploaded_image_flatten, dataset_images_flatten)
+    
+    # Find the index of the closest image
+    closest_image_index = np.argmin(distances)
+    
+    # Return the label of the closest image
+    return dataset_labels[closest_image_index]
+
+# Function to predict skin type without using dataset
 def predict_skin_type_directly(image):
     img = preprocess_image(image)
     img = img.reshape(1, 128, 128, 3)  # Reshape for the model
@@ -93,7 +127,7 @@ def show_home_page():
         if st.button("Get Started"):
             go_to_page("upload_page")  
 
-# Upload page with only skin type prediction
+# Upload page with skin type and severity prediction
 def show_upload_page():
     st.title("Upload or Take a Picture")
 
@@ -110,6 +144,25 @@ def show_upload_page():
         # Display predicted skin type
         st.markdown(f"<h3 style='color: white; font-size: 28px;'>Predicted Skin Type:</h3>", unsafe_allow_html=True)
         st.markdown(f"<h2 style='color: blue; font-weight: bold; text-align: center;'>{predicted_skin_type}</h2>", unsafe_allow_html=True)
+
+        # Preprocess the uploaded image for severity prediction
+        preprocessed_image = preprocess_image(image)
+
+        # Load the dataset images and labels for severity prediction
+        image_folder = "C:\\Skinalyze-main\\JPEGImages"  # Path to your dataset images
+        labels_file = "acne_severity_results.csv"  # Path to your labels file
+        dataset_images, dataset_labels = load_dataset_images(image_folder, labels_file)
+
+        # Predict acne severity by finding the closest image in the dataset
+        predicted_severity_label = find_closest_image(preprocessed_image, dataset_images, dataset_labels)
+        
+        # Display predicted acne severity
+        st.markdown(f"<h3 style='color: white; font-size: 28px;'>Predicted Acne Severity:</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='color: red; font-weight: bold; text-align: center;'>{predicted_severity_label}</h2>", unsafe_allow_html=True)
+
+        # Use severity mapping to get the integer value for the slider
+        severity_int_value = severity_mapping.get(predicted_severity_label, 1)
+        st.slider("Predicted Acne Severity Level", min_value=1, max_value=5, value=severity_int_value, step=1, disabled=True)
         
     if st.button("Go Back"):
         go_to_page("home_page")
