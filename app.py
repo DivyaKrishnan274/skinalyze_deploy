@@ -113,7 +113,7 @@ def show_home_page():
     col1, col2 = st.columns([0.7, 0.5])  
 
     with col1:
-        image = Image.open("C:\\Skinalyze-main\\wallpaper.jpg")  
+        image = Image.open("Cwallpaper.jpg")  
         st.image(image, caption='Regular Skin Care', use_container_width=True)
 
     with col2:
@@ -143,7 +143,7 @@ def show_upload_page():
 
         # Load the dataset images and labels
         image_folder = "C:\\Skinalyze-main\\JPEGImages"  # Path to your dataset images
-        labels_file = "C:\\Skinalyze-main\\acne_severity_results.csv"  # Path to your labels file
+        labels_file = "acne_severity_results.csv"  # Path to your labels file
         dataset_images, dataset_labels = load_dataset_images(image_folder, labels_file)
 
         # Predict severity by finding the closest image in the dataset
